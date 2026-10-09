@@ -26,10 +26,10 @@ except Exception as e:
     st.stop()
 
 # ==========================================
-# BARRA LATERAL: FILTROS INTUITIVOS
+# BARRA LATERAL: FILTROS INTERACTIVOS
 # ==========================================
 st.sidebar.header("🎛️ Panel de Control")
-st.sidebar.markdown("Filtre los datos para actualizar en tiempo real todas las vistas y gráficos.")
+st.sidebar.markdown("Use estos selectores para filtrar los datos en tiempo real:")
 
 # Detección segura de columnas clave
 col_etapa = 'etapa_deglaciacion' if 'etapa_deglaciacion' in df.columns else df.columns[1]
@@ -38,7 +38,7 @@ col_tratamiento = 'treatment_short' if 'treatment_short' in df.columns else df.c
 # Filtro por Etapa de Deglaciación
 opciones_etapa = df[col_etapa].dropna().unique()
 etapa_sel = st.sidebar.multiselect(
-    "1️⃣ Seleccione Etapa de Deglaciación:",
+    "1️⃣ Etapa de Deglaciación:",
     options=opciones_etapa,
     default=opciones_etapa
 )
@@ -46,7 +46,7 @@ etapa_sel = st.sidebar.multiselect(
 # Filtro por Tratamiento
 opciones_tratamiento = df[col_tratamiento].dropna().unique()
 tratamiento_sel = st.sidebar.multiselect(
-    "2️⃣ Seleccione Tratamiento:",
+    "2️⃣ Tratamiento:",
     options=opciones_tratamiento,
     default=opciones_tratamiento
 )
@@ -93,14 +93,13 @@ with tab1:
 
     st.markdown("---")
     st.info(
-        "💡 **Guía para la Exposición:** Este panel web interactivo permite explorar cómo evoluciona "
-        "la química del suelo y la actividad microbiana a lo largo del retroceso de los glaciares en la Antártica. "
-        "**Pase el cursor sobre los gráficos dinámicos** de las siguientes pestañas para ver los detalles de cada muestra."
+        "💡 **Guía de Uso:** Para aislar una **etapa de deglaciación** específica, despliegue el menú "
+        "en la barra lateral izquierda y seleccione las etapas de su interés. Los gráficos se adaptarán al instante."
     )
 
 # --- TAB 2: FISICOQUÍMICA ---
 with tab2:
-    st.markdown("### 🧪 Dinámica Fisicoquímica del Suelo Antártico (Dinámico)")
+    st.markdown("### 🧪 Dinámica Fisicoquímica del Suelo Antártico")
     
     c1, c2 = st.columns(2)
     with c1:
@@ -108,14 +107,12 @@ with tab2:
             fig1 = px.scatter(
                 df_filtered, x=ph_col, y=c_col, color=col_tratamiento,
                 title="Relación pH vs Carbono Total",
-                labels={ph_col: "pH del Suelo", c_col: "Carbono Total (g/kg)"},
-                hover_data=df_filtered.columns[:3]
+                labels={ph_col: "pH del Suelo", c_col: "Carbono Total (g/kg)"}
             )
             fig1.update_layout(template="plotly_white", margin=dict(t=40, b=20, l=20, r=20))
             st.plotly_chart(fig1, use_container_width=True)
         else:
-            st.warning("No hay datos para mostrar con los filtros actual.")
-        st.caption("🔍 **Interactividad:** Coloque el cursor sobre los puntos para inspeccionar muestras individuales.")
+            st.warning("No hay datos para mostrar con los filtros actuales.")
 
     with c2:
         if len(df_filtered) > 0:
@@ -128,11 +125,10 @@ with tab2:
             st.plotly_chart(fig2, use_container_width=True)
         else:
             st.warning("No hay datos para mostrar.")
-        st.caption("🔍 **Interactividad:** Visualice medianas y dispersión estadística al instante.")
 
 # --- TAB 3: ACTIVIDAD ENZIMÁTICA ---
 with tab3:
-    st.markdown("### 酶 Actividad Enzimática (Capacidad Microbiana Dinámica)")
+    st.markdown("### 酶 Actividad Enzimática (Capacidad Microbiana)")
 
     c1, c2 = st.columns(2)
     with c1:
@@ -147,7 +143,6 @@ with tab3:
             st.plotly_chart(fig3, use_container_width=True)
         else:
             st.warning("No hay datos disponibles.")
-        st.caption("🔍 **Interactividad:** Cada punto representa una muestra real con sus puntos atípicos visibles.")
 
     with c2:
         if len(df_filtered) > 0:
@@ -161,13 +156,11 @@ with tab3:
             st.plotly_chart(fig4, use_container_width=True)
         else:
             st.warning("No hay datos disponibles.")
-        st.caption("🔍 **Interactividad:** Compara la densidad de distribución de la enzima por tratamiento.")
 
 # --- TAB 4: CORRELACIONES CLAVE ---
 with tab4:
-    st.markdown("### 📈 Matriz de Correlación Interactiva")
-    st.markdown("Análisis estadístico de las relaciones directas entre propiedades fisicoquímicas y enzimáticas.")
-
+    st.markdown("### 📈 Matriz de Correlación de Variables Esenciales")
+    
     candidatas_corr = [ph_col, c_col, enz_col, 'n_total_gkg', 'cn_ratio', 'conductivity_us_cm']
     cols_corr = [c for c in candidatas_corr if c in df_filtered.columns and pd.api.types.is_numeric_dtype(df_filtered[c])]
     
@@ -181,15 +174,12 @@ with tab4:
         )
         fig5.update_layout(template="plotly_white", margin=dict(t=40, b=20, l=20, r=20))
         st.plotly_chart(fig5, use_container_width=True)
-        st.markdown("🔍 **Nota Didáctica:** Los gráficos de correlación Plotly permiten ver el valor exacto de Pearson al pasar el cursor por cada celda.")
     else:
         st.warning("No hay suficientes columnas numéricas disponibles.")
 
 # --- TAB 5: BASE DE DATOS ---
 with tab5:
     st.markdown("### 📋 Explorador y Exportación de Datos")
-    st.markdown("Tabla interactiva con los registros filtrados en tiempo real.")
-    
     st.dataframe(df_filtered, use_container_width=True)
     
     csv_data = df_filtered.to_csv(index=False).encode('utf-8')
