@@ -21,7 +21,6 @@ st.markdown("Plataforma interactiva para la divulgación científica, análisis 
 # Carga de datos optimizada y cacheada
 @st.cache_data
 def load_data():
-    # Carga el archivo Excel principal ubicado en el repositorio
     df = pd.read_excel('INACH_RT_12_21_quimica_suelo_enzimas_R_ready.xlsx', sheet_name=0)
     return df
 
@@ -173,23 +172,37 @@ with tab3:
 # --- TAB 4: CORRELACIONES ESTADÍSTICAS ---
 with tab4:
     st.subheader("Matriz de Correlación Multivariada")
-    st.write("Análisis estadístico de Pearson entre las principales variables fisicoquímicas y enzimáticas del estudio.")
+    st.write("Análisis de correlación de Pearson focalizado en las variables edáficas y enzimáticas principales del estudio.")
 
-    # Seleccionar solo columnas numéricas relevantes
-    cols_num = df_filtered.select_dtypes(include=['float64', 'int64']).columns
-    if len(cols_num) > 1:
-        corr_matrix = df_filtered[cols_num].corr()
+    # Selección limpia de variables clave para evitar saturar el gráfico
+    candidatas_corr = [
+        ph_col, c_col, enz_col, 
+        'n_total_gkg', 'cn_ratio', 
+        'conductivity_us_cm', 'temperatura_c'
+    ]
+    # Filtrar solo aquellas columnas que existan realmente en el dataframe
+    cols_corr = [c for c in candidatas_corr if c in df_filtered.columns and pd.api.types.is_numeric_dtype(df_filtered[c])]
+    
+    # Si faltan algunas, completamos con las primeras numéricas disponibles hasta un máximo de 6
+    if len(cols_corr) < 4:
+        num_cols = df_filtered.select_dtypes(include=['float64', 'int64']).columns.tolist()
+        cols_corr = list(dict.fromkeys(cols_corr + num_cols))[:6]
+
+    if len(cols_corr) > 1:
+        corr_matrix = df_filtered[cols_corr].corr()
         
-        fig, ax = plt.subplots(figsize=(9, 7))
+        fig, ax = plt.subplots(figsize=(8, 6))
         sns.heatmap(
             corr_matrix, annot=True, fmt='.2f', cmap='coolwarm', vmin=-1, vmax=1,
-            linewidths=0.5, cbar_kws={'label': 'Coeficiente de Correlación'}, ax=ax
+            linewidths=1, linecolor='white', cbar_kws={'label': 'Coeficiente de Correlación (r)'}, ax=ax
         )
-        ax.set_title("Matriz de Correlación de Pearson", fontsize=13, fontweight='bold')
+        ax.set_title("Matriz de Correlación de Variables Clave", fontsize=13, fontweight='bold', pad=15)
+        plt.xticks(rotation=30, ha='right')
+        plt.yticks(rotation=0)
         plt.tight_layout()
         st.pyplot(fig)
     else:
-        st.warning("No hay suficientes columnas numéricas para calcular la matriz de correlación con los filtros actuales.")
+        st.warning("No hay suficientes columnas numéricas disponibles para generar la matriz de correlación.")
 
 # --- TAB 5: TABLA DE DATOS ---
 with tab5:
@@ -198,7 +211,6 @@ with tab5:
     
     st.dataframe(df_filtered, use_container_width=True)
     
-    # Botón de descarga en CSV
     csv_data = df_filtered.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="📥 Descargar datos filtrados en formato CSV",
